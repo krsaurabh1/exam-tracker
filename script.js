@@ -47,9 +47,18 @@
   var chartLegend = document.getElementById('chart-legend');
   var chartNote = document.getElementById('chart-note');
   var chartSub = document.getElementById('chart-sub');
+  var formSubmitButton = document.getElementById('form-submit');
+  var formCancelButton = document.getElementById('form-cancel');
+  var tableToolbar = document.getElementById('table-toolbar');
+  var exportCsvButton = document.getElementById('export-csv');
+  var gateOverlay = document.getElementById('access-gate');
+  var gateForm = document.getElementById('gate-form');
+  var gatePasswordInput = document.getElementById('gate-password');
+  var gateError = document.getElementById('gate-error');
 
   var entries = isEditor ? load() : [];
   var sort = loadSort();
+  var editingId = null; // id of the entry currently loaded into the form, or null when adding
 
   // --- Persistence ---------------------------------------------------------
 
@@ -276,6 +285,7 @@
 
   function buildRow(entry) {
     var row = document.createElement('tr');
+    if (entry.id === editingId) row.className = 'editing-row';
     var percent = percentOf(entry);
 
     var subjectCell = document.createElement('td');
@@ -310,6 +320,14 @@
       var actionCell = document.createElement('td');
       actionCell.className = 'actions';
 
+      var editButton = document.createElement('button');
+      editButton.type = 'button';
+      editButton.className = 'edit';
+      editButton.textContent = 'Edit';
+      editButton.dataset.id = entry.id;
+      editButton.setAttribute('aria-label', 'Edit ' + entry.subject + ' ' +
+        (entry.testType || 'entry') + ' on ' + formatDate(entry.date));
+
       var button = document.createElement('button');
       button.type = 'button';
       button.className = 'delete';
@@ -318,6 +336,7 @@
       button.setAttribute('aria-label', 'Delete ' + entry.subject + ' ' +
         (entry.testType || 'entry') + ' on ' + formatDate(entry.date));
 
+      actionCell.appendChild(editButton);
       actionCell.appendChild(button);
       cells.push(actionCell);
     }
@@ -366,6 +385,7 @@
     tableWrap.hidden = !hasEntries;
     emptyEl.hidden = hasEntries;
     summaryEl.hidden = !hasEntries;
+    tableToolbar.hidden = !hasEntries;
 
     if (hasEntries) renderSummary();
     renderSortIndicators();
@@ -1013,6 +1033,34 @@
     errorEl.hidden = true;
   }
 
+  function startEdit(entry) {
+    editingId = entry.id;
+    subjectInput.value = entry.subject;
+    testTypeInput.value = entry.testType;
+    dateInput.value = entry.date;
+    scoreInput.value = trimNumber(entry.score);
+    outOfInput.value = trimNumber(entry.outOf);
+    clearError();
+
+    formSubmitButton.textContent = 'Save changes';
+    formCancelButton.hidden = false;
+    render();
+    subjectInput.focus();
+  }
+
+  function cancelEdit() {
+    editingId = null;
+    form.reset();
+    outOfInput.value = '100';
+    clearError();
+
+    formSubmitButton.textContent = 'Add entry';
+    formCancelButton.hidden = true;
+    render();
+  }
+
+  formCancelButton.addEventListener('click', cancelEdit);
+
   form.addEventListener('submit', function (event) {
     event.preventDefault();
     clearError();
@@ -1058,6 +1106,27 @@
       return;
     }
 
+    if (editingId) {
+      var target = entries.filter(function (item) { return item.id === editingId; })[0];
+      if (target) {
+        target.subject = subject;
+        target.testType = testType;
+        target.date = date;
+        target.score = score;
+        target.outOf = outOf;
+      }
+
+      editingId = null;
+      formSubmitButton.textContent = 'Add entry';
+      formCancelButton.hidden = true;
+
+      save();
+      render();
+      form.reset();
+      outOfInput.value = '100';
+      return;
+    }
+
     entries.push({
       id: makeId(),
       subject: subject,
@@ -1077,6 +1146,13 @@
   });
 
   tbody.addEventListener('click', function (event) {
+    var editButton = event.target.closest('.edit');
+    if (editButton) {
+      var editEntry = entries.filter(function (item) { return item.id === editButton.dataset.id; })[0];
+      if (editEntry) startEdit(editEntry);
+      return;
+    }
+
     var button = event.target.closest('.delete');
     if (!button) return;
 
@@ -1090,8 +1166,47 @@
     }
 
     entries = entries.filter(function (item) { return item.id !== id; });
+    if (editingId === id) cancelEdit();
     save();
     render();
+  });
+
+  // --- Export ----------------------------------------------------------------
+
+  function csvField(value) {
+    var text = String(value);
+    if (/[",\n]/.test(text)) {
+      return '"' + text.replace(/"/g, '""') + '"';
+    }
+    return text;
+  }
+
+  function entriesToCsv(list) {
+    var header = ['Subject', 'Test type', 'Date', 'Score', 'Out of', '% Score'];
+    var rows = list.map(function (entry) {
+      return [
+        entry.subject,
+        entry.testType,
+        entry.date,
+        trimNumber(entry.score),
+        trimNumber(entry.outOf),
+        percentOf(entry)
+      ].map(csvField).join(',');
+    });
+    return [header.join(',')].concat(rows).join('\r\n') + '\r\n';
+  }
+
+  exportCsvButton.addEventListener('click', function () {
+    var csv = entriesToCsv(sortedEntries());
+    var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    var url = URL.createObjectURL(blob);
+    var link = document.createElement('a');
+    link.href = url;
+    link.download = 'exam-scores.csv';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 10000);
   });
 
   // --- Publishing ----------------------------------------------------------
@@ -1155,62 +1270,105 @@
 
   // --- Init ----------------------------------------------------------------
 
-  applyTheme(document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light');
+  function startApp() {
+    applyTheme(document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light');
 
-  if (isEditor) {
-    publishButton.hidden = false;
-    form.hidden = false;
-    setNotice(
-      '<strong>Edit mode.</strong> Changes are saved in this browser only. ' +
-      'Click <strong>Publish</strong> to produce the <code>data.json</code> ' +
-      'that family members see.'
-    );
-  }
-
-  render();
-
-  fetchPublished().then(function (published) {
-    if (!isEditor) {
-      entries = published.entries;
-      if (published.entries.length) {
-        setNotice('<strong>Read-only view.</strong>' +
-          describePublishTime(published.publishedAt));
-      }
-      render();
-      return;
-    }
-
-    // First time editing on a new device: start from what's already published
-    // instead of an empty table.
-    if (!entries.length && published.entries.length) {
-      entries = published.entries;
-      save();
-      render();
+    if (isEditor) {
+      publishButton.hidden = false;
+      form.hidden = false;
       setNotice(
-        '<strong>Loaded ' + entries.length + ' published entries into this browser.</strong> ' +
-        'Add or delete entries, then click <strong>Publish</strong> to update the shared page.'
+        '<strong>Edit mode.</strong> Changes are saved in this browser only. ' +
+        'Click <strong>Publish</strong> to produce the <code>data.json</code> ' +
+        'that family members see.'
       );
     }
-  }).catch(function () {
-    if (isEditor) return;
 
-    // No published file reachable — opening from disk blocks the read, and there
-    // may be no data.json yet. Fall back to this browser's own entries so the
-    // page is still useful; add "#edit" to change them.
-    entries = load();
     render();
 
-    if (entries.length) {
-      setNotice(
-        '<strong>Showing this browser\'s saved entries.</strong> ' +
-        'The published <code>data.json</code> could not be read — browsers block ' +
-        'that when a page is opened from disk. Add <code>#edit</code> to the URL to make changes.'
-      );
-    } else {
-      setNotice(
-        '<strong>Nothing to show yet.</strong> ' +
-        'Add <code>#edit</code> to the URL to enter your first entry.'
-      );
-    }
-  });
+    fetchPublished().then(function (published) {
+      if (!isEditor) {
+        entries = published.entries;
+        if (published.entries.length) {
+          setNotice('<strong>Read-only view.</strong>' +
+            describePublishTime(published.publishedAt));
+        }
+        render();
+        return;
+      }
+
+      // First time editing on a new device: start from what's already published
+      // instead of an empty table.
+      if (!entries.length && published.entries.length) {
+        entries = published.entries;
+        save();
+        render();
+        setNotice(
+          '<strong>Loaded ' + entries.length + ' published entries into this browser.</strong> ' +
+          'Add or delete entries, then click <strong>Publish</strong> to update the shared page.'
+        );
+      }
+    }).catch(function () {
+      if (isEditor) return;
+
+      // No published file reachable — opening from disk blocks the read, and there
+      // may be no data.json yet. Fall back to this browser's own entries so the
+      // page is still useful; add "#edit" to change them.
+      entries = load();
+      render();
+
+      if (entries.length) {
+        setNotice(
+          '<strong>Showing this browser\'s saved entries.</strong> ' +
+          'The published <code>data.json</code> could not be read — browsers block ' +
+          'that when a page is opened from disk. Add <code>#edit</code> to the URL to make changes.'
+        );
+      } else {
+        setNotice(
+          '<strong>Nothing to show yet.</strong> ' +
+          'Add <code>#edit</code> to the URL to enter your first entry.'
+        );
+      }
+    });
+  }
+
+  // --- Access gate -----------------------------------------------------------
+  // The config (required / hash) lives in index.html so the lock state can be
+  // resolved before first paint, with no flash of real content. Nothing here
+  // is real server-side security — it's a deterrent for casual visitors and
+  // search engines, not protection against someone reading the page source.
+
+  var gateConfig = window.__examTrackerGate || { required: false, hash: '' };
+
+  function sha256Hex(text) {
+    var data = new TextEncoder().encode(text);
+    return crypto.subtle.digest('SHA-256', data).then(function (buffer) {
+      return Array.prototype.map.call(new Uint8Array(buffer), function (b) {
+        return (b < 16 ? '0' : '') + b.toString(16);
+      }).join('');
+    });
+  }
+
+  function unlockGate() {
+    document.documentElement.dataset.locked = 'false';
+    startApp();
+  }
+
+  if (!gateConfig.required || document.documentElement.dataset.locked === 'false') {
+    unlockGate();
+  } else {
+    gatePasswordInput.focus();
+    gateForm.addEventListener('submit', function (event) {
+      event.preventDefault();
+      sha256Hex(gatePasswordInput.value).then(function (hash) {
+        if (hash === gateConfig.hash) {
+          writeRaw('exam-tracker.gate', hash);
+          gateError.hidden = true;
+          unlockGate();
+        } else {
+          gateError.hidden = false;
+          gatePasswordInput.select();
+        }
+      });
+    });
+  }
 })();
