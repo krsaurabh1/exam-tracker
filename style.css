@@ -95,6 +95,8 @@ h1 {
   margin: 0;
   font-size: 1.6rem;
   letter-spacing: -0.01em;
+  color: #c8a2c8;
+  font-family: Cambria, Georgia, "Times New Roman", serif;
 }
 
 .head-actions {
@@ -334,6 +336,24 @@ select:focus-visible {
   outline-offset: 1px;
 }
 
+.reset-zoom {
+  padding: 0.4rem 0.7rem;
+  font-size: 0.82rem;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.reset-zoom:hover {
+  background: var(--row-hover);
+}
+
+.chart-hint {
+  margin: -0.35rem 0 0.75rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
 .chart-card {
   padding: 1rem 1rem 0.75rem;
   background: var(--surface);
@@ -350,6 +370,14 @@ select:focus-visible {
   width: 100%;
   height: auto;
   overflow: visible;
+}
+
+.zoom-brush {
+  fill: var(--accent);
+  fill-opacity: 0.15;
+  stroke: var(--accent);
+  stroke-width: 1;
+  stroke-dasharray: 3 2;
 }
 
 #chart:focus-visible {

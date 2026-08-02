@@ -42,6 +42,7 @@
   var chartRange = document.getElementById('chart-range');
   var chartSvg = document.getElementById('chart');
   var chartPlot = document.getElementById('chart-plot');
+  var chartResetZoom = document.getElementById('chart-reset-zoom');
   var chartTooltip = document.getElementById('chart-tooltip');
   var chartLegend = document.getElementById('chart-legend');
   var chartNote = document.getElementById('chart-note');
@@ -387,6 +388,16 @@
   var hoverIndex = null;
   var plot = null; // geometry of the last render, for hover math
 
+  // Drag-to-zoom state. Not persisted — a fresh view of the data always
+  // starts fully zoomed out; the filters resetting it is intentional too,
+  // since a new subject/range has a different time domain.
+  var chartZoom = null;
+  var isDragging = false;
+  var dragStartX = null;
+  var dragCurrentX = null;
+  var dragRectEl = null;
+  var DRAG_THRESHOLD = 6;
+
   function loadChartOptions() {
     var raw = readRaw(CHART_KEY);
     if (raw) {
@@ -590,19 +601,35 @@
     series.forEach(function (s) {
       s.points.forEach(function (p) { times.push(p.time); });
     });
-    var minT = Math.min.apply(null, times);
-    var maxT = Math.max.apply(null, times);
-    if (minT === maxT) {
+    var fullMinT = Math.min.apply(null, times);
+    var fullMaxT = Math.max.apply(null, times);
+    if (fullMinT === fullMaxT) {
       // A single date would give a zero-width domain; show it centred.
-      minT -= 15 * 86400000;
-      maxT += 15 * 86400000;
+      fullMinT -= 15 * 86400000;
+      fullMaxT += 15 * 86400000;
+    }
+
+    // A drag-to-zoom selection narrows the time domain, clamped back to the
+    // full data range so it can never be dragged wider than the data itself.
+    var minT = fullMinT, maxT = fullMaxT;
+    if (chartZoom) {
+      minT = Math.max(fullMinT, Math.min(chartZoom.start, fullMaxT));
+      maxT = Math.max(fullMinT, Math.min(chartZoom.end, fullMaxT));
+      if (maxT <= minT) {
+        minT = fullMinT;
+        maxT = fullMaxT;
+        chartZoom = null;
+      }
     }
 
     function px(time) {
       return pad.left + ((time - minT) / (maxT - minT)) * plotW;
     }
+    // The axis floor sits at 50%, not 0% — small score differences are what
+    // matter here, so the lower half of the scale would just be dead space.
     function py(percent) {
-      return pad.top + (1 - percent / 100) * plotH;
+      var clamped = Math.max(50, Math.min(100, percent));
+      return pad.top + (1 - (clamped - 50) / 50) * plotH;
     }
 
     chartSvg.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
@@ -611,8 +638,10 @@
     plot = { width: width, minT: minT, maxT: maxT, left: pad.left, plotW: plotW,
              top: pad.top, plotH: plotH, py: py, px: px };
 
+    chartResetZoom.hidden = !chartZoom;
+
     // Gridlines — solid hairlines, one step off the surface.
-    [0, 25, 50, 75, 100].forEach(function (value) {
+    [50, 60, 70, 80, 90, 100].forEach(function (value) {
       var y = py(value);
       chartSvg.appendChild(svg('line', {
         class: 'grid-line', x1: pad.left, x2: pad.left + plotW, y1: y, y2: y
@@ -648,7 +677,15 @@
       chartSvg.appendChild(tick);
     }
 
-    // Series lines and markers
+    // Series lines and markers, clipped to the plot rect so a zoomed-in
+    // view doesn't bleed a line into the axis-label margins.
+    var clipId = 'chart-clip';
+    var clipPath = svg('clipPath', { id: clipId });
+    clipPath.appendChild(svg('rect', { x: pad.left, y: pad.top, width: plotW, height: plotH }));
+    chartSvg.appendChild(clipPath);
+    var seriesGroup = svg('g', { 'clip-path': 'url(#' + clipId + ')' });
+    chartSvg.appendChild(seriesGroup);
+
     var endLabels = [];
     series.forEach(function (s) {
       var stroke = 'var(--series-' + s.slot + ')';
@@ -659,7 +696,7 @@
 
       var path = svg('path', { class: 'series-line', d: d });
       path.style.stroke = stroke;
-      chartSvg.appendChild(path);
+      seriesGroup.appendChild(path);
 
       // Dots would clutter a dense series; keep just the ends past 40 points.
       var dense = s.points.length > 40;
@@ -670,15 +707,19 @@
           class: 'series-dot', cx: px(p.time), cy: py(p.percent), r: 4
         });
         dot.style.fill = stroke;
-        chartSvg.appendChild(dot);
+        seriesGroup.appendChild(dot);
       });
 
+      // Only label the series' true last point when it's actually in view —
+      // zoomed away from it, the label would float outside the plot.
       var last = s.points[s.points.length - 1];
-      endLabels.push({
-        y: py(last.percent),
-        x: px(last.time) + 9,
-        text: labelTexts[series.indexOf(s)]
-      });
+      if (last.time >= minT && last.time <= maxT) {
+        endLabels.push({
+          y: py(last.percent),
+          x: px(last.time) + 9,
+          text: labelTexts[series.indexOf(s)]
+        });
+      }
 
       var item = document.createElement('li');
       var key = document.createElement('span');
@@ -715,9 +756,12 @@
     }));
 
     // One entry per unique date, so the crosshair snaps to real data.
+    // Points outside the current zoom window are skipped — the hover can't
+    // land somewhere the chart doesn't currently draw.
     var unique = Object.create(null);
     series.forEach(function (s) {
       s.points.forEach(function (p) {
+        if (p.time < minT || p.time > maxT) return;
         if (!unique[p.time]) unique[p.time] = [];
         unique[p.time].push({ series: s, point: p });
       });
@@ -812,10 +856,20 @@
     chartTooltip.style.top = (plot.top + 4) + 'px';
   }
 
-  function nearestIndex(clientX) {
+  function svgXFromClient(clientX) {
     var rect = chartSvg.getBoundingClientRect();
     var scale = rect.width && plot ? plot.width / rect.width : 1;
-    var svgX = (clientX - rect.left) * scale;
+    return (clientX - rect.left) * scale;
+  }
+
+  function svgYFromClient(clientY) {
+    var rect = chartSvg.getBoundingClientRect();
+    var scale = rect.width && plot ? plot.width / rect.width : 1;
+    return (clientY - rect.top) * scale;
+  }
+
+  function nearestIndex(clientX) {
+    var svgX = svgXFromClient(clientX);
 
     var best = 0;
     var bestDistance = Infinity;
@@ -829,9 +883,81 @@
     return best;
   }
 
+  // --- Drag-to-zoom ----------------------------------------------------
+
+  function updateDragRect() {
+    var x = Math.min(dragStartX, dragCurrentX);
+    var w = Math.abs(dragCurrentX - dragStartX);
+    if (!dragRectEl) {
+      dragRectEl = svg('rect', { class: 'zoom-brush' });
+      chartSvg.appendChild(dragRectEl);
+    }
+    dragRectEl.setAttribute('x', x);
+    dragRectEl.setAttribute('y', plot.top);
+    dragRectEl.setAttribute('width', w);
+    dragRectEl.setAttribute('height', plot.plotH);
+  }
+
+  function removeDragRect() {
+    if (dragRectEl && dragRectEl.parentNode) dragRectEl.parentNode.removeChild(dragRectEl);
+    dragRectEl = null;
+  }
+
+  chartSvg.addEventListener('pointerdown', function (event) {
+    if (!plot) return;
+    var x = svgXFromClient(event.clientX);
+    var y = svgYFromClient(event.clientY);
+    if (x < plot.left || x > plot.left + plot.plotW) return;
+    if (y < plot.top || y > plot.top + plot.plotH) return;
+    isDragging = true;
+    dragStartX = x;
+    dragCurrentX = x;
+    hideTooltip();
+    if (chartSvg.setPointerCapture) {
+      try { chartSvg.setPointerCapture(event.pointerId); } catch (err) {}
+    }
+  });
+
   chartSvg.addEventListener('pointermove', function (event) {
-    if (!plot || !hoverTimes.length) return;
+    if (!plot) return;
+    if (isDragging) {
+      dragCurrentX = Math.max(plot.left, Math.min(plot.left + plot.plotW, svgXFromClient(event.clientX)));
+      updateDragRect();
+      return;
+    }
+    if (!hoverTimes.length) return;
     showHover(nearestIndex(event.clientX));
+  });
+
+  function endDrag() {
+    if (!isDragging) return;
+    isDragging = false;
+    removeDragRect();
+
+    var x1 = dragStartX, x2 = dragCurrentX;
+    dragStartX = null;
+    dragCurrentX = null;
+    if (!plot || Math.abs(x2 - x1) < DRAG_THRESHOLD) return;
+
+    var lo = Math.min(x1, x2), hi = Math.max(x1, x2);
+    var t1 = plot.minT + ((lo - plot.left) / plot.plotW) * (plot.maxT - plot.minT);
+    var t2 = plot.minT + ((hi - plot.left) / plot.plotW) * (plot.maxT - plot.minT);
+    chartZoom = { start: t1, end: t2 };
+    renderChart();
+  }
+
+  chartSvg.addEventListener('pointerup', endDrag);
+  chartSvg.addEventListener('pointercancel', endDrag);
+
+  chartSvg.addEventListener('dblclick', function () {
+    if (!chartZoom) return;
+    chartZoom = null;
+    renderChart();
+  });
+
+  chartResetZoom.addEventListener('click', function () {
+    chartZoom = null;
+    renderChart();
   });
 
   chartSvg.addEventListener('pointerleave', hideTooltip);
@@ -857,12 +983,14 @@
 
   chartSubject.addEventListener('change', function () {
     chartOptions.subject = chartSubject.value;
+    chartZoom = null;
     saveChartOptions();
     renderChart();
   });
 
   chartRange.addEventListener('change', function () {
     chartOptions.range = chartRange.value;
+    chartZoom = null;
     saveChartOptions();
     renderChart();
   });
