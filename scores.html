@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow, noarchive">
+  <title>Scores - Mishika's 11+ Tracker</title>
+  <script src="gate-init.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="access-gate" class="access-gate">
+    <form id="gate-form" class="gate-card">
+      <h1 class="gate-title">Mishika's 11+ Tracker</h1>
+      <p class="gate-sub">Enter the password to continue.</p>
+      <label for="gate-password" class="visually-hidden">Password</label>
+      <input type="password" id="gate-password" autocomplete="current-password"
+             placeholder="Password" required>
+      <button type="submit" class="primary">Unlock</button>
+      <p id="gate-error" class="error" role="alert" hidden>Incorrect password.</p>
+    </form>
+  </div>
+
+  <main>
+    <nav class="site-nav" aria-label="Site">
+      <a href="index.html">Dashboard</a>
+      <a href="schools.html">Schools</a>
+      <a href="scores.html" aria-current="page">Scores</a>
+    </nav>
+
+    <header class="page-head">
+      <h1>Mock Scores</h1>
+      <div class="head-actions">
+        <button type="button" id="publish" class="primary" hidden>Publish&hellip;</button>
+        <button type="button" id="theme-toggle" class="theme-toggle" aria-pressed="false">
+          <span class="theme-icon" aria-hidden="true"></span>
+          <span id="theme-label">Dark mode</span>
+        </button>
+      </div>
+    </header>
+
+    <p id="notice" class="notice" hidden></p>
+
+    <form id="entry-form" novalidate hidden>
+      <div class="field">
+        <label for="subject">Subject</label>
+        <input type="text" id="subject" name="subject" placeholder="e.g. Chemistry"
+               maxlength="60" autocomplete="off" list="subject-options" required>
+        <datalist id="subject-options"></datalist>
+      </div>
+
+      <div class="field">
+        <label for="test-type">Test type</label>
+        <input type="text" id="test-type" name="testType" placeholder="e.g. Midterm"
+               maxlength="40" autocomplete="off" list="test-type-options" required>
+        <datalist id="test-type-options">
+          <option value="Quiz"></option>
+          <option value="Unit Test"></option>
+          <option value="Midterm"></option>
+          <option value="Final"></option>
+          <option value="Assignment"></option>
+          <option value="Practical"></option>
+          <option value="Mock"></option>
+        </datalist>
+      </div>
+
+      <div class="field">
+        <label for="date">Date</label>
+        <input type="date" id="date" name="date" required>
+      </div>
+
+      <div class="field field-narrow">
+        <label for="score">Score</label>
+        <input type="number" id="score" name="score" min="0" step="any"
+               placeholder="e.g. 42" required>
+      </div>
+
+      <div class="field field-narrow">
+        <label for="out-of">Out of</label>
+        <input type="number" id="out-of" name="outOf" min="0" step="any"
+               value="100" required>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="primary" id="form-submit">Add entry</button>
+        <button type="button" id="form-cancel" class="secondary" hidden>Cancel</button>
+      </div>
+    </form>
+
+    <p id="form-error" class="error" role="alert" hidden></p>
+
+    <section class="summary" id="summary" hidden>
+      <span><strong id="stat-count">0</strong> entries</span>
+      <span>average <strong id="stat-average">&mdash;</strong></span>
+      <span>best <strong id="stat-best">&mdash;</strong></span>
+    </section>
+
+    <section class="chart-section" id="chart-section" hidden>
+      <div class="chart-head">
+        <div>
+          <h2 id="chart-title">Score history</h2>
+          <p class="chart-sub" id="chart-sub">% score over time</p>
+        </div>
+        <div class="filters">
+          <div class="filter">
+            <label for="chart-subject">Subject</label>
+            <select id="chart-subject">
+              <option value="">All subjects</option>
+            </select>
+          </div>
+          <div class="filter">
+            <label for="chart-range">Range</label>
+            <select id="chart-range">
+              <option value="all">All time</option>
+              <option value="365">Last 12 months</option>
+              <option value="90">Last 90 days</option>
+            </select>
+          </div>
+          <div class="filter">
+            <button type="button" id="chart-reset-zoom" class="reset-zoom" hidden>Reset zoom</button>
+          </div>
+        </div>
+      </div>
+
+      <p class="chart-hint">Drag on the chart to zoom into a date range.</p>
+
+      <div class="chart-card">
+        <div class="chart-plot" id="chart-plot">
+          <svg id="chart" role="img" tabindex="0"
+               aria-label="Line chart of percent score over time"></svg>
+          <div class="chart-tooltip" id="chart-tooltip" role="status" aria-live="polite" hidden></div>
+        </div>
+        <ul class="legend" id="chart-legend" hidden></ul>
+        <p class="chart-note" id="chart-note" hidden></p>
+      </div>
+    </section>
+
+    <div class="table-toolbar" id="table-toolbar" hidden>
+      <button type="button" id="export-csv" class="secondary">Export CSV</button>
+    </div>
+
+    <div class="table-wrap">
+      <table id="entries-table">
+        <caption class="visually-hidden">
+          Recorded exam scores. Use the column buttons to sort.
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col" aria-sort="none">
+              <button type="button" class="sort" data-column="subject">
+                Subject<span class="indicator" aria-hidden="true"></span>
+              </button>
+            </th>
+            <th scope="col" aria-sort="none">
+              <button type="button" class="sort" data-column="testType">
+                Test type<span class="indicator" aria-hidden="true"></span>
+              </button>
+            </th>
+            <th scope="col" aria-sort="none">
+              <button type="button" class="sort" data-column="date">
+                Date<span class="indicator" aria-hidden="true"></span>
+              </button>
+            </th>
+            <th scope="col" class="numeric">Score</th>
+            <th scope="col" class="numeric">Out of</th>
+            <th scope="col" class="numeric" aria-sort="none">
+              <button type="button" class="sort numeric-sort" data-column="percent">
+                % Score<span class="indicator" aria-hidden="true"></span>
+              </button>
+            </th>
+            <th scope="col"><span class="visually-hidden">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody id="entries-body"></tbody>
+      </table>
+    </div>
+
+    <p id="empty-state" class="empty">No entries yet. Add your first score above.</p>
+  </main>
+
+  <script src="common.js"></script>
+  <script src="scores.js"></script>
+</body>
+</html>

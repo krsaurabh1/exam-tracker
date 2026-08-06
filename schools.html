@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow, noarchive">
-  <title>Mishika's 11+ Tracker</title>
+  <title>Schools - Mishika's 11+ Tracker</title>
   <script src="gate-init.js"></script>
   <link rel="stylesheet" href="style.css">
 </head>
@@ -23,14 +23,15 @@
 
   <main>
     <nav class="site-nav" aria-label="Site">
-      <a href="index.html" aria-current="page">Dashboard</a>
-      <a href="schools.html">Schools</a>
+      <a href="index.html">Dashboard</a>
+      <a href="schools.html" aria-current="page">Schools</a>
       <a href="scores.html">Scores</a>
     </nav>
 
     <header class="page-head">
-      <h1>Mishika's 11+ Tracker</h1>
+      <h1>Schools</h1>
       <div class="head-actions">
+        <button type="button" id="publish" class="primary" hidden>Publish&hellip;</button>
         <button type="button" id="theme-toggle" class="theme-toggle" aria-pressed="false">
           <span class="theme-icon" aria-hidden="true"></span>
           <span id="theme-label">Dark mode</span>
@@ -40,30 +41,20 @@
 
     <p id="notice" class="notice" hidden></p>
 
-    <section>
-      <h2 class="section-heading">Upcoming</h2>
-      <div id="upcoming-list"></div>
+    <section id="label-editor" class="label-editor edit-only" hidden>
+      <h2 class="section-heading">Customize field names</h2>
+      <p class="section-sub">These captions apply to every school card below.</p>
+      <div id="label-editor-fields" class="school-meta"></div>
     </section>
 
-    <section id="undated-section" hidden>
-      <h2 class="section-heading">Not yet dated</h2>
-      <p class="section-sub">These schools have key dates still to add.</p>
-      <div id="undated-list"></div>
-    </section>
+    <div id="schools-list"></div>
 
-    <section class="quick-links">
-      <a class="quick-link" href="schools.html">
-        <strong>Schools</strong>
-        <span>Registration, exam format and key dates for each school</span>
-      </a>
-      <a class="quick-link" href="scores.html">
-        <strong>Scores</strong>
-        <span>Mock test score history and charts</span>
-      </a>
-    </section>
+    <div class="table-toolbar edit-only" id="add-school-toolbar" hidden>
+      <button type="button" id="add-school" class="secondary">+ Add school</button>
+    </div>
   </main>
 
   <script src="common.js"></script>
-  <script src="dashboard.js"></script>
+  <script src="schools.js"></script>
 </body>
 </html>

@@ -2,7 +2,6 @@
   'use strict';
 
   var STORAGE_KEY = 'exam-tracker.entries';
-  var THEME_KEY = 'exam-tracker.theme';
   var SORT_KEY = 'exam-tracker.sort';
   var CHART_KEY = 'exam-tracker.chart';
   var DATA_URL = 'data.json';
@@ -56,28 +55,15 @@
   var gatePasswordInput = document.getElementById('gate-password');
   var gateError = document.getElementById('gate-error');
 
+  // --- Persistence ---------------------------------------------------------
+
+  var readRaw = Common.readRaw;
+  var writeRaw = Common.writeRaw;
+  var makeId = Common.makeId;
+
   var entries = isEditor ? load() : [];
   var sort = loadSort();
   var editingId = null; // id of the entry currently loaded into the form, or null when adding
-
-  // --- Persistence ---------------------------------------------------------
-
-  function readRaw(key) {
-    try {
-      return localStorage.getItem(key);
-    } catch (err) {
-      return null; // storage blocked (e.g. private browsing)
-    }
-  }
-
-  function writeRaw(key, value) {
-    try {
-      localStorage.setItem(key, value);
-      return true;
-    } catch (err) {
-      return false;
-    }
-  }
 
   // Shared by the local copy and the fetched data.json: both are untrusted
   // input that may predate the testType / outOf fields.
@@ -165,26 +151,6 @@
   function saveSort() {
     writeRaw(SORT_KEY, JSON.stringify(sort));
   }
-
-  function makeId() {
-    return String(Date.now()) + '-' + Math.random().toString(36).slice(2, 8);
-  }
-
-  // --- Theme ---------------------------------------------------------------
-
-  function applyTheme(theme) {
-    document.documentElement.dataset.theme = theme;
-    var isDark = theme === 'dark';
-    themeLabel.textContent = isDark ? 'Light mode' : 'Dark mode';
-    themeToggle.setAttribute('aria-pressed', isDark ? 'true' : 'false');
-    themeToggle.title = isDark ? 'Switch to light mode' : 'Switch to dark mode';
-  }
-
-  themeToggle.addEventListener('click', function () {
-    var next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
-    applyTheme(next);
-    writeRaw(THEME_KEY, next);
-  });
 
   // --- Derived values ------------------------------------------------------
 
@@ -1217,13 +1183,7 @@
   }
 
   function fetchPublished() {
-    // Cache-busted so a republished file shows up without a hard refresh.
-    return fetch(DATA_URL + '?t=' + encodeURIComponent(String(Date.now())), {
-      cache: 'no-store'
-    }).then(function (response) {
-      if (!response.ok) throw new Error('HTTP ' + response.status);
-      return response.json();
-    }).then(function (data) {
+    return Common.fetchJson(DATA_URL).then(function (data) {
       var list = data && Array.isArray(data.entries) ? data.entries : data;
       return {
         entries: normalize(list).entries,
@@ -1232,15 +1192,7 @@
     });
   }
 
-  function describePublishTime(iso) {
-    if (!iso) return '';
-    var d = new Date(iso);
-    if (isNaN(d.getTime())) return '';
-    return ' Last updated ' + d.toLocaleString(undefined, {
-      year: 'numeric', month: 'short', day: 'numeric',
-      hour: 'numeric', minute: '2-digit'
-    }) + '.';
-  }
+  var describePublishTime = Common.describePublishTime;
 
   publishButton.addEventListener('click', function () {
     var payload = {
@@ -1248,16 +1200,7 @@
       entries: entries
     };
 
-    var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-    var url = URL.createObjectURL(blob);
-    var link = document.createElement('a');
-    link.href = url;
-    link.download = 'data.json';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    // Revoked on a delay so the download has time to start in every browser.
-    setTimeout(function () { URL.revokeObjectURL(url); }, 10000);
+    Common.downloadJson('data.json', payload);
 
     setNotice(
       '<strong>Downloaded <code>data.json</code> with ' + entries.length +
@@ -1271,7 +1214,7 @@
   // --- Init ----------------------------------------------------------------
 
   function startApp() {
-    applyTheme(document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light');
+    Common.initTheme({ themeToggle: themeToggle, themeLabel: themeLabel });
 
     if (isEditor) {
       publishButton.hidden = false;
@@ -1332,43 +1275,14 @@
   }
 
   // --- Access gate -----------------------------------------------------------
-  // The config (required / hash) lives in index.html so the lock state can be
-  // resolved before first paint, with no flash of real content. Nothing here
-  // is real server-side security — it's a deterrent for casual visitors and
-  // search engines, not protection against someone reading the page source.
+  // The config (required / hash) lives in gate-init.js so the lock state can
+  // be resolved before first paint, with no flash of real content. Nothing
+  // here is real server-side security — it's a deterrent for casual visitors
+  // and search engines, not protection against someone reading the page source.
 
-  var gateConfig = window.__examTrackerGate || { required: false, hash: '' };
-
-  function sha256Hex(text) {
-    var data = new TextEncoder().encode(text);
-    return crypto.subtle.digest('SHA-256', data).then(function (buffer) {
-      return Array.prototype.map.call(new Uint8Array(buffer), function (b) {
-        return (b < 16 ? '0' : '') + b.toString(16);
-      }).join('');
-    });
-  }
-
-  function unlockGate() {
-    document.documentElement.dataset.locked = 'false';
-    startApp();
-  }
-
-  if (!gateConfig.required || document.documentElement.dataset.locked === 'false') {
-    unlockGate();
-  } else {
-    gatePasswordInput.focus();
-    gateForm.addEventListener('submit', function (event) {
-      event.preventDefault();
-      sha256Hex(gatePasswordInput.value).then(function (hash) {
-        if (hash === gateConfig.hash) {
-          writeRaw('exam-tracker.gate', hash);
-          gateError.hidden = true;
-          unlockGate();
-        } else {
-          gateError.hidden = false;
-          gatePasswordInput.select();
-        }
-      });
-    });
-  }
+  Common.initGate({
+    gateForm: gateForm,
+    gatePasswordInput: gatePasswordInput,
+    gateError: gateError
+  }, startApp);
 })();
