@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow, noarchive">
-  <title>Schools - Mishika's 11+ Tracker</title>
+  <title>Resources - Mishika's 11+ Tracker</title>
   <script src="gate-init.js"></script>
   <link rel="stylesheet" href="style.css">
 </head>
@@ -24,13 +24,13 @@
   <main>
     <nav class="site-nav" aria-label="Site">
       <a href="index.html">Dashboard</a>
-      <a href="schools.html" aria-current="page">Schools</a>
+      <a href="schools.html">Schools</a>
       <a href="scores.html">Scores</a>
-      <a href="resources.html">Resources</a>
+      <a href="resources.html" aria-current="page">Resources</a>
     </nav>
 
     <header class="page-head">
-      <h1>Schools</h1>
+      <h1>Resources</h1>
       <div class="head-actions">
         <button type="button" id="publish" class="primary" hidden>Publish&hellip;</button>
         <button type="button" id="theme-toggle" class="theme-toggle" aria-pressed="false">
@@ -42,20 +42,14 @@
 
     <p id="notice" class="notice" hidden></p>
 
-    <section id="label-editor" class="label-editor edit-only" hidden>
-      <h2 class="section-heading">Customize field names</h2>
-      <p class="section-sub">These captions apply to every school card below.</p>
-      <div id="label-editor-fields" class="school-meta"></div>
-    </section>
+    <div id="resources-list"></div>
 
-    <div id="schools-list"></div>
-
-    <div class="table-toolbar edit-only" id="add-school-toolbar" hidden>
-      <button type="button" id="add-school" class="secondary">+ Add school</button>
+    <div class="table-toolbar edit-only" id="add-resource-toolbar" hidden>
+      <button type="button" id="add-resource" class="secondary">+ Add link</button>
     </div>
   </main>
 
   <script src="common.js"></script>
-  <script src="schools.js"></script>
+  <script src="resources.js"></script>
 </body>
 </html>

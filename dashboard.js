@@ -14,6 +14,7 @@
   var themeToggle = document.getElementById('theme-toggle');
   var themeLabel = document.getElementById('theme-label');
   var noticeEl = document.getElementById('notice');
+  var upcomingFiltersEl = document.getElementById('upcoming-filters');
   var upcomingListEl = document.getElementById('upcoming-list');
   var undatedSection = document.getElementById('undated-section');
   var undatedListEl = document.getElementById('undated-list');
@@ -102,10 +103,58 @@
       '</a>';
   }
 
+  // Kept at module scope so a filter-chip click can re-render just the list
+  // (and the chips' active state) without re-fetching or losing filter state.
+  var allUpcoming = [];
+  var colorMapCache = {};
+  var activeSchoolFilter = null;
+
+  function renderFilterChips(schools, colorMap) {
+    var chips = [
+      '<button type="button" class="filter-chip' + (!activeSchoolFilter ? ' active' : '') + '" data-filter="">All</button>'
+    ];
+    schools.forEach(function (school) {
+      var active = activeSchoolFilter === school.id;
+      chips.push(
+        '<button type="button" class="filter-chip' + (active ? ' active' : '') + '" data-filter="' + esc(school.id) + '">' +
+        '<span class="badge-dot" style="background:' + (colorMap[school.id] || 'var(--muted)') + '"></span>' +
+        esc(school.name || 'Untitled school') +
+        '</button>'
+      );
+    });
+    upcomingFiltersEl.innerHTML = chips.join('');
+  }
+
+  function applyUpcomingFilter() {
+    var filtered = activeSchoolFilter ?
+      allUpcoming.filter(function (item) { return item.school.id === activeSchoolFilter; }) :
+      allUpcoming;
+
+    upcomingListEl.innerHTML = filtered.length ?
+      filtered.map(function (item) { return renderUpcomingItem(item, colorMapCache); }).join('') :
+      '<p class="empty">' +
+      (activeSchoolFilter ?
+        'No upcoming dates for this school.' :
+        'No upcoming dates. Add some on the <a href="schools.html">Schools</a> page.') +
+      '</p>';
+
+    Array.prototype.forEach.call(upcomingFiltersEl.querySelectorAll('.filter-chip'), function (chip) {
+      chip.classList.toggle('active', (chip.dataset.filter || null) === activeSchoolFilter);
+    });
+  }
+
+  upcomingFiltersEl.addEventListener('click', function (event) {
+    var chip = event.target.closest('.filter-chip');
+    if (!chip) return;
+    var id = chip.dataset.filter || null;
+    activeSchoolFilter = (id && activeSchoolFilter !== id) ? id : null;
+    applyUpcomingFilter();
+  });
+
   function render(schools) {
     var todayStr = new Date().toISOString().slice(0, 10);
-    var colorMap = buildColorMap(schools);
-    var upcoming = [];
+    colorMapCache = buildColorMap(schools);
+    allUpcoming = [];
     var undatedSchools = [];
 
     schools.forEach(function (school) {
@@ -114,24 +163,23 @@
         if (stage.sortDate) {
           hasDatedStage = true;
           if (stage.sortDate >= todayStr) {
-            upcoming.push({ school: school, stage: stage });
+            allUpcoming.push({ school: school, stage: stage });
           }
         }
       });
       if (!hasDatedStage) undatedSchools.push(school);
     });
 
-    upcoming.sort(function (a, b) {
+    allUpcoming.sort(function (a, b) {
       return a.stage.sortDate < b.stage.sortDate ? -1 : a.stage.sortDate > b.stage.sortDate ? 1 : 0;
     });
 
-    upcomingListEl.innerHTML = upcoming.length ?
-      upcoming.map(function (item) { return renderUpcomingItem(item, colorMap); }).join('') :
-      '<p class="empty">No upcoming dates. Add some on the <a href="schools.html">Schools</a> page.</p>';
+    renderFilterChips(schools, colorMapCache);
+    applyUpcomingFilter();
 
     if (undatedSchools.length) {
       undatedSection.hidden = false;
-      undatedListEl.innerHTML = undatedSchools.map(function (school) { return renderUndatedItem(school, colorMap); }).join('');
+      undatedListEl.innerHTML = undatedSchools.map(function (school) { return renderUndatedItem(school, colorMapCache); }).join('');
     }
   }
 
@@ -149,6 +197,22 @@
         var tag = child.tagName;
         if (TODO_STRIP_ENTIRELY[tag]) {
           node.removeChild(child);
+          return;
+        }
+        // Only a bare checkbox is allowed through — everything else about
+        // an <input> (text/password/file/event-handler attrs, ...) is a
+        // real risk, so anything that isn't exactly this is dropped whole.
+        if (tag === 'INPUT') {
+          if (child.getAttribute('type') !== 'checkbox') {
+            node.removeChild(child);
+            return;
+          }
+          var isChecked = child.hasAttribute('checked');
+          Array.prototype.slice.call(child.attributes).forEach(function (attr) {
+            child.removeAttribute(attr.name);
+          });
+          child.setAttribute('type', 'checkbox');
+          if (isChecked) child.setAttribute('checked', '');
           return;
         }
         Array.prototype.slice.call(child.attributes).forEach(function (attr) {
@@ -215,6 +279,17 @@
       saveTodo();
     });
 
+    // Checkbox toggles are a 'change' event, not 'input' — and checked
+    // state lives on the DOM property, not the HTML attribute, so it has
+    // to be synced onto the attribute explicitly before innerHTML (used
+    // for both localStorage and Publish) will actually capture it.
+    todoContent.addEventListener('change', function (event) {
+      if (event.target.tagName !== 'INPUT' || event.target.type !== 'checkbox') return;
+      if (event.target.checked) event.target.setAttribute('checked', '');
+      else event.target.removeAttribute('checked');
+      saveTodo();
+    });
+
     todoToolbar.addEventListener('mousedown', function (event) {
       if (event.target.closest('.todo-btn')) event.preventDefault();
     });
@@ -224,7 +299,11 @@
       if (!button) return;
       restoreSelection();
       todoContent.focus();
-      document.execCommand(button.dataset.command, false, null);
+      if (button.dataset.command === 'checklist') {
+        document.execCommand('insertHTML', false, '<div><input type="checkbox"> </div>');
+      } else {
+        document.execCommand(button.dataset.command, false, null);
+      }
       saveTodo();
     });
 

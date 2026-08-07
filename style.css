@@ -815,20 +815,23 @@ td.actions {
 /* Same element tree in both modes; only visibility differs, driven by
    body[data-mode] (set once by each page's script based on the #edit gate). */
 
+/* !important is deliberate: this toggle must always win regardless of
+   what other display-setting rules an element's other classes carry
+   (e.g. .field or .resource-fields also set `display`, same specificity). */
 .edit-only {
-  display: none;
+  display: none !important;
 }
 
 body[data-mode="edit"] .edit-only {
-  display: revert;
+  display: revert !important;
 }
 
 .view-only {
-  display: revert;
+  display: revert !important;
 }
 
 body[data-mode="edit"] .view-only {
-  display: none;
+  display: none !important;
 }
 
 /* --- School cards --- */
@@ -937,6 +940,53 @@ textarea {
   text-transform: none;
   font-weight: 400;
   letter-spacing: normal;
+}
+
+/* --- Resource cards --- */
+
+.resource-card {
+  margin-bottom: 1rem;
+  padding: 1.1rem 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.resource-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.resource-card-head h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-family: Cambria, Georgia, "Times New Roman", serif;
+}
+
+.resource-card-head h2 a {
+  color: var(--accent);
+}
+
+.resource-url {
+  margin: 0.2rem 0 0;
+  font-size: 0.8rem;
+  word-break: break-all;
+}
+
+.resource-notes {
+  margin: 0.4rem 0 0;
+  font-size: 0.9rem;
+  white-space: pre-line;
+}
+
+.resource-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 0.75rem;
 }
 
 /* --- Label editor --- */
@@ -1082,6 +1132,40 @@ section:first-of-type .section-heading {
   border-radius: 50%;
 }
 
+/* --- Upcoming filter chips --- */
+
+.filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.8rem;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.filter-chip:hover {
+  border-color: var(--accent);
+}
+
+.filter-chip.active {
+  color: var(--accent-text);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
 .quick-links {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
@@ -1094,15 +1178,18 @@ section:first-of-type .section-heading {
   flex-direction: column;
   gap: 0.3rem;
   padding: 1.25rem;
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: #1a2744;
+  border: 1px solid #1a2744;
   border-radius: 10px;
   text-decoration: none;
-  color: var(--text);
+  color: #eef1f8;
+  transition: background 0.15s ease, transform 0.15s ease;
 }
 
 .quick-link:hover {
-  border-color: var(--accent);
+  background: #223257;
+  border-color: #2f4372;
+  transform: translateY(-2px);
 }
 
 .quick-link strong {
@@ -1112,7 +1199,7 @@ section:first-of-type .section-heading {
 
 .quick-link span {
   font-size: 0.85rem;
-  color: var(--muted);
+  color: #b9c3dc;
 }
 
 /* --- To Do sticky note --- */
@@ -1209,4 +1296,14 @@ section:first-of-type .section-heading {
 
 :root[data-theme="dark"] .todo-content[contenteditable="true"]:empty::before {
   color: rgba(255, 255, 255, 0.45);
+}
+
+.todo-content input[type="checkbox"] {
+  margin-right: 0.4rem;
+  vertical-align: middle;
+}
+
+.todo-content div:has(> input[type="checkbox"]:checked) {
+  text-decoration: line-through;
+  opacity: 0.55;
 }

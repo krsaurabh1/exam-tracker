@@ -26,6 +26,7 @@
       <a href="index.html" aria-current="page">Dashboard</a>
       <a href="schools.html">Schools</a>
       <a href="scores.html">Scores</a>
+      <a href="resources.html">Resources</a>
     </nav>
 
     <header class="page-head">
@@ -50,6 +51,10 @@
         <strong>Scores</strong>
         <span>Mock test score history and charts</span>
       </a>
+      <a class="quick-link" href="resources.html">
+        <strong>Resources</strong>
+        <span>Useful links for 11+ prep, past papers and more</span>
+      </a>
     </section>
 
     <section class="todo-section">
@@ -59,6 +64,7 @@
           <button type="button" class="todo-btn" data-command="bold" title="Bold"><b>B</b></button>
           <button type="button" class="todo-btn" data-command="underline" title="Underline"><u>U</u></button>
           <button type="button" class="todo-btn" data-command="insertUnorderedList" title="Bullet list">&#8226; List</button>
+          <button type="button" class="todo-btn" data-command="checklist" title="Checklist item">&#9744; Check</button>
           <select class="todo-font" id="todo-font" title="Font">
             <option value="">Font</option>
             <option value="Georgia, serif">Georgia</option>
@@ -76,6 +82,7 @@
 
     <section>
       <h2 class="section-heading">Upcoming</h2>
+      <div id="upcoming-filters" class="filter-chips"></div>
       <div id="upcoming-list"></div>
     </section>
 
