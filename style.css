@@ -838,6 +838,7 @@ body[data-mode="edit"] .view-only {
   padding: 1.25rem;
   background: var(--surface);
   border: 1px solid var(--border);
+  border-left: 4px solid var(--school-color, var(--border));
   border-radius: 10px;
 }
 
@@ -1034,9 +1035,9 @@ section:first-of-type .section-heading {
 .upcoming-when {
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
-  min-width: 6rem;
-  text-align: right;
+  align-items: flex-start;
+  flex: 0 0 6.5rem;
+  text-align: left;
 }
 
 .days-until {
@@ -1061,20 +1062,31 @@ section:first-of-type .section-heading {
 }
 
 .badge {
-  padding: 0.15rem 0.6rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.15rem 0.7rem 0.15rem 0.55rem;
   font-size: 0.78rem;
   font-weight: 700;
-  color: var(--accent-text);
-  background: var(--accent);
+  color: var(--text);
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
   border-radius: 999px;
   white-space: nowrap;
+}
+
+.badge-dot {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 auto;
+  border-radius: 50%;
 }
 
 .quick-links {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
   gap: 1rem;
-  margin-top: 2rem;
+  margin-bottom: 2rem;
 }
 
 .quick-link {
@@ -1101,4 +1113,100 @@ section:first-of-type .section-heading {
 .quick-link span {
   font-size: 0.85rem;
   color: var(--muted);
+}
+
+/* --- To Do sticky note --- */
+
+.todo-section {
+  margin-bottom: 2rem;
+}
+
+.todo-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.todo-head .section-heading {
+  margin: 0;
+}
+
+.todo-toolbar {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.todo-btn {
+  padding: 0.3rem 0.65rem;
+  font-size: 0.85rem;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.todo-btn:hover {
+  border-color: var(--accent);
+}
+
+.todo-font {
+  padding: 0.3rem 0.5rem;
+  font-size: 0.85rem;
+  font-family: inherit;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.todo-hint {
+  margin-bottom: 0.75rem;
+}
+
+.todo-note {
+  padding: 1.25rem 1.5rem;
+  background: #fff3b0;
+  border-radius: 6px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+  transform: rotate(-0.5deg);
+  transition: transform 0.15s ease;
+}
+
+.todo-note:hover {
+  transform: rotate(0deg);
+}
+
+:root[data-theme="dark"] .todo-note {
+  background: #4a3f1a;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+.todo-content {
+  min-height: 4rem;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: #46390f;
+  outline: none;
+}
+
+:root[data-theme="dark"] .todo-content {
+  color: #f5e6b0;
+}
+
+.todo-content ul,
+.todo-content ol {
+  margin: 0.4rem 0;
+  padding-left: 1.4rem;
+}
+
+.todo-content[contenteditable="true"]:empty::before {
+  content: "Click here to start typing your to-do list\2026";
+  color: rgba(0, 0, 0, 0.4);
+}
+
+:root[data-theme="dark"] .todo-content[contenteditable="true"]:empty::before {
+  color: rgba(255, 255, 255, 0.45);
 }

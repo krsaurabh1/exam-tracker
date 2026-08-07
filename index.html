@@ -31,6 +31,7 @@
     <header class="page-head">
       <h1>Mishika's 11+ Tracker</h1>
       <div class="head-actions">
+        <button type="button" id="publish" class="primary" hidden>Publish To Do&hellip;</button>
         <button type="button" id="theme-toggle" class="theme-toggle" aria-pressed="false">
           <span class="theme-icon" aria-hidden="true"></span>
           <span id="theme-label">Dark mode</span>
@@ -39,17 +40,6 @@
     </header>
 
     <p id="notice" class="notice" hidden></p>
-
-    <section>
-      <h2 class="section-heading">Upcoming</h2>
-      <div id="upcoming-list"></div>
-    </section>
-
-    <section id="undated-section" hidden>
-      <h2 class="section-heading">Not yet dated</h2>
-      <p class="section-sub">These schools have key dates still to add.</p>
-      <div id="undated-list"></div>
-    </section>
 
     <section class="quick-links">
       <a class="quick-link" href="schools.html">
@@ -60,6 +50,39 @@
         <strong>Scores</strong>
         <span>Mock test score history and charts</span>
       </a>
+    </section>
+
+    <section class="todo-section">
+      <div class="todo-head">
+        <h2 class="section-heading">To Do</h2>
+        <div class="todo-toolbar edit-only" id="todo-toolbar" hidden>
+          <button type="button" class="todo-btn" data-command="bold" title="Bold"><b>B</b></button>
+          <button type="button" class="todo-btn" data-command="underline" title="Underline"><u>U</u></button>
+          <button type="button" class="todo-btn" data-command="insertUnorderedList" title="Bullet list">&#8226; List</button>
+          <select class="todo-font" id="todo-font" title="Font">
+            <option value="">Font</option>
+            <option value="Georgia, serif">Georgia</option>
+            <option value="'Trebuchet MS', sans-serif">Trebuchet</option>
+            <option value="'Courier New', monospace">Courier</option>
+            <option value="'Comic Sans MS', cursive">Comic Sans</option>
+          </select>
+        </div>
+      </div>
+      <p id="todo-hint" class="todo-hint notice edit-only" hidden></p>
+      <div id="todo-note" class="todo-note">
+        <div id="todo-content" class="todo-content" spellcheck="false"></div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="section-heading">Upcoming</h2>
+      <div id="upcoming-list"></div>
+    </section>
+
+    <section id="undated-section" hidden>
+      <h2 class="section-heading">Not yet dated</h2>
+      <p class="section-sub">These schools have key dates still to add.</p>
+      <div id="undated-list"></div>
     </section>
   </main>
 

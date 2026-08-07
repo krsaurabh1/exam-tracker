@@ -179,15 +179,22 @@
       '</li>';
   }
 
-  function renderSchoolCard(school) {
+  // Same school always gets the same color: assigned by its position in the
+  // schools array, using the same validated --series-1..8 categorical colors
+  // the score chart uses (see the note in scores.js and dashboard.js).
+  var MAX_SERIES = 8;
+
+  function renderSchoolCard(school, index) {
     var stagesHtml = school.stages.map(renderStage).join('');
     var stagesEmpty = school.stages.length ? '' :
       '<p class="empty view-only stage-empty">No dates added yet.</p>';
     var countHint = school.stages.length ?
       ' <span class="muted">(' + school.stages.length + ')</span>' : '';
+    var color = 'var(--series-' + ((index % MAX_SERIES) + 1) + ')';
 
     return '' +
-      '<section class="school-card" id="school-' + esc(school.id) + '" data-school-id="' + esc(school.id) + '">' +
+      '<section class="school-card" id="school-' + esc(school.id) + '" data-school-id="' + esc(school.id) +
+      '" style="--school-color: ' + color + '">' +
       '<div class="school-card-head">' +
       '<h2 class="view-only">' + (school.name.trim() ? esc(school.name) : '<span class="muted">Untitled school</span>') + '</h2>' +
       '<input class="edit-only school-name-input" type="text" data-field="name" ' +
@@ -216,7 +223,9 @@
       listEl.innerHTML = '<p class="empty">No schools added yet.</p>';
       return;
     }
-    listEl.innerHTML = schools.map(renderSchoolCard).join('');
+    listEl.innerHTML = schools.map(function (school, index) {
+      return renderSchoolCard(school, index);
+    }).join('');
   }
 
   // Built once (not on every keystroke, so typing doesn't lose focus) — its
