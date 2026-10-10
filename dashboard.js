@@ -78,9 +78,44 @@
       '</span>';
   }
 
+  // --- Upcoming "done" ticks ------------------------------------------------
+  // Stored in this browser's localStorage only (no JSON file to publish), so
+  // each device keeps its own ticks. Keyed by school id + stage id so a tick
+  // survives the stage's date or label being edited and republished.
+
+  var DONE_STORAGE_KEY = 'exam-tracker.upcomingDone';
+
+  function loadDone() {
+    try {
+      var parsed = JSON.parse(readRaw(DONE_STORAGE_KEY) || '{}');
+      return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch (err) {
+      return {};
+    }
+  }
+
+  var doneMap = loadDone();
+
+  function doneKey(item) {
+    return item.school.id + '/' + item.stage.id;
+  }
+
+  function setDone(key, isDone) {
+    if (isDone) doneMap[key] = new Date().toISOString();
+    else delete doneMap[key];
+    writeRaw(DONE_STORAGE_KEY, JSON.stringify(doneMap));
+  }
+
   function renderUpcomingItem(item, colorMap) {
     var n = daysUntil(item.stage.sortDate);
+    var key = doneKey(item);
+    var isDone = !!doneMap[key];
+    var label = item.stage.label || 'Untitled';
     return '' +
+      '<div class="upcoming-row' + (isDone ? ' is-done' : '') + '">' +
+      '<input type="checkbox" class="upcoming-check" data-key="' + esc(key) + '"' +
+      (isDone ? ' checked' : '') +
+      ' aria-label="Mark done: ' + esc(item.school.name || 'Untitled school') + ' – ' + esc(label) + '">' +
       '<a class="upcoming-item" href="schools.html#school-' + esc(item.school.id) + '">' +
       '<div class="upcoming-when">' +
       '<span class="days-until">' + esc(describeDays(n)) + '</span>' +
@@ -88,9 +123,10 @@
       '</div>' +
       '<div class="upcoming-what">' +
       schoolBadge(item.school, colorMap) +
-      '<span class="upcoming-label">' + esc(item.stage.label || 'Untitled') + '</span>' +
+      '<span class="upcoming-label">' + esc(label) + '</span>' +
       '</div>' +
-      '</a>';
+      '</a>' +
+      '</div>';
   }
 
   function renderUndatedItem(school, colorMap) {
@@ -149,6 +185,13 @@
     var id = chip.dataset.filter || null;
     activeSchoolFilter = (id && activeSchoolFilter !== id) ? id : null;
     applyUpcomingFilter();
+  });
+
+  upcomingListEl.addEventListener('change', function (event) {
+    var box = event.target;
+    if (!box.classList || !box.classList.contains('upcoming-check')) return;
+    setDone(box.dataset.key, box.checked);
+    box.closest('.upcoming-row').classList.toggle('is-done', box.checked);
   });
 
   function render(schools) {

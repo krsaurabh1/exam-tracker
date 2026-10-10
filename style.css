@@ -1082,6 +1082,37 @@ section:first-of-type .section-heading {
   border-color: var(--accent);
 }
 
+/* Checkbox sits beside the link (not inside it) so ticking never navigates. */
+.upcoming-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.6rem;
+}
+
+.upcoming-row .upcoming-item {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+.upcoming-check {
+  flex: 0 0 auto;
+  width: 1.15rem;
+  height: 1.15rem;
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.upcoming-row.is-done .upcoming-item {
+  opacity: 0.6;
+}
+
+.upcoming-row.is-done .upcoming-label {
+  text-decoration: line-through;
+}
+
 .upcoming-when {
   display: flex;
   flex-direction: column;
