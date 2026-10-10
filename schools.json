@@ -1,5 +1,5 @@
 {
-  "publishedAt": "2026-09-26T16:13:35.177Z",
+  "publishedAt": "2026-10-10T21:47:06.961Z",
   "fieldLabels": {
     "registered": "Registered?",
     "nextVisit": "Next visit",
@@ -15,7 +15,7 @@
     {
       "id": "jags",
       "name": "JAGS",
-      "registered": "",
+      "registered": "Yes",
       "moreInfoUrl": "https://www.jags.org.uk/wp-content/uploads/2026/03/Key-Dates-for-2027.pdf",
       "nextVisit": "On welcome morning",
       "scholarships": "Art",
@@ -61,7 +61,7 @@
     {
       "id": "alleyns",
       "name": "Alleyns",
-      "registered": "",
+      "registered": "Yes",
       "moreInfoUrl": "https://www.alleyns.org.uk/admissions/senior-school-11-",
       "nextVisit": "",
       "scholarships": "Art, DT",
@@ -101,13 +101,20 @@
           "date": "Week of 25 Jan 2027",
           "sortDate": "2027-01-25",
           "notes": ""
+        },
+        {
+          "id": "1791668791894-hz8634",
+          "label": "Acad Scholarship workshop",
+          "date": "29 Jan 2027",
+          "sortDate": "2027-01-29",
+          "notes": ""
         }
       ]
     },
     {
       "id": "clsg",
       "name": "CLSG",
-      "registered": "",
+      "registered": "Yes",
       "moreInfoUrl": "https://plus.cem.org/cemselectfam/",
       "nextVisit": "",
       "scholarships": "",
@@ -116,7 +123,7 @@
         {
           "id": "clsg-1",
           "label": "Registration closes",
-          "date": "June – 30 Oct 2026",
+          "date": "30 Oct 2026",
           "sortDate": "2026-10-30",
           "notes": ""
         },
@@ -146,11 +153,11 @@
     {
       "id": "eltham",
       "name": "Eltham",
-      "registered": "",
+      "registered": "Yes",
       "moreInfoUrl": "https://www.eltham-college.org.uk/admissions/sample-papers/",
-      "nextVisit": "",
-      "scholarships": "",
-      "notes": "",
+      "nextVisit": "5 Jan",
+      "scholarships": "Art, Drama",
+      "notes": "Applied for Scholarships in the form. Forms are due 23 Nov.",
       "stages": [
         {
           "id": "eltham-1",
@@ -162,7 +169,7 @@
         {
           "id": "eltham-2",
           "label": "Written assessments & interview",
-          "date": "5–6 Jan 2027",
+          "date": "5 Jan 2027",
           "sortDate": "2027-01-05",
           "notes": "Written papers in Maths and English, plus a computer-adaptive verbal and non-verbal reasoning assessment. Every candidate also has a one-to-one interview with a senior member of teaching staff."
         },
@@ -172,13 +179,20 @@
           "date": "21–29 Jan 2027",
           "sortDate": "2027-01-21",
           "notes": ""
+        },
+        {
+          "id": "1791667733701-18ozs4",
+          "label": "Art and Drama Schol Submission due",
+          "date": "23 Nov 2026",
+          "sortDate": "2026-11-23",
+          "notes": ""
         }
       ]
     },
     {
       "id": "colfes",
       "name": "Colfe's",
-      "registered": "",
+      "registered": "Not Yet",
       "moreInfoUrl": "",
       "nextVisit": "",
       "scholarships": "",
@@ -187,8 +201,8 @@
         {
           "id": "colfes-1",
           "label": "Registration due",
-          "date": "12 Nov 2026",
-          "sortDate": "2026-11-12",
+          "date": "13 Nov 2026",
+          "sortDate": "2026-11-13",
           "notes": ""
         },
         {
@@ -196,19 +210,45 @@
           "label": "Assessment day",
           "date": "5 Jan 2027",
           "sortDate": "2027-01-05",
-          "notes": "A full school day at Colfe's. Morning: written (paper-based) Maths and English assessments plus a group interview. Afternoon: taster lessons. Academic scholarship candidates are interviewed separately in the following weeks."
+          "notes": "A full school day at Colfe's. Morning: written (paper-based) Maths and English assessments plus a group interview. Afternoon: taster lessons. Academic scholarship candidates are interviewed separately in the following weeks.\nBACKUP DATE. 06 Jan 27"
         }
       ]
     },
     {
       "id": "westminster",
       "name": "Westminster",
-      "registered": "",
+      "registered": "Yes",
+      "moreInfoUrl": "",
+      "nextVisit": "Done",
+      "scholarships": "None",
+      "notes": "First Round is ISEB.\nSecond round - Written Maths and Eng papers in JAN.\nThird round - Interviews in Feb",
+      "stages": [
+        {
+          "id": "1791668047915-4cpys8",
+          "label": "First round ISEB",
+          "date": "8 Dec 2026",
+          "sortDate": "2026-12-08",
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "id": "1791668169115-pohxsw",
+      "name": "State Schools",
+      "registered": "No",
       "moreInfoUrl": "",
       "nextVisit": "",
       "scholarships": "",
-      "notes": "",
-      "stages": []
+      "notes": "CAS to be completed by 30 Oct 26",
+      "stages": [
+        {
+          "id": "1791668200666-w3l0yp",
+          "label": "CAS DUE DATE",
+          "date": "30 Oct 2026",
+          "sortDate": "2026-10-30",
+          "notes": ""
+        }
+      ]
     }
   ]
 }
